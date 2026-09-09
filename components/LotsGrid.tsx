@@ -1,0 +1,66 @@
+import Link from "next/link";
+import { fmtBRL } from "@/lib/format";
+
+type Lot = {
+  id: number;
+  name: string;
+  price_cents: number;
+  quantity: number;
+  sold: number;
+  position: number;
+  status: "ativo" | "esgotado" | "aguardando" | "encerrado";
+};
+
+export default function LotsGrid({ lots }: { lots: Lot[] }) {
+  return (
+    <div className="lots-grid">
+      {lots.map((lot) => {
+        const pct = Math.min(100, Math.round((lot.sold / lot.quantity) * 100));
+        const available = Math.max(lot.quantity - lot.sold, 0);
+        const isActive = lot.status === "ativo";
+        const isSold = lot.status === "esgotado";
+        const isWaiting = lot.status === "aguardando" || lot.status === "encerrado";
+        const statusLabel = isActive
+          ? available <= 15
+            ? "ÚLTIMOS INGRESSOS!"
+            : "DISPONÍVEL"
+          : isSold
+          ? "ESGOTADO"
+          : "EM BREVE";
+
+        return (
+          <div
+            key={lot.id}
+            className={`lot-card ${isActive ? "is-active" : ""} ${isSold ? "is-sold" : ""}`}
+          >
+            <div className="lot-num">{lot.position}</div>
+            <div className="lot-name">{lot.name.toUpperCase()}</div>
+            <div className="lot-price">{fmtBRL(lot.price_cents)}</div>
+            <div className={`lot-status ${lot.status}`}>{statusLabel}</div>
+            <div className="lot-progress">
+              <i style={{ width: `${pct}%` }} />
+            </div>
+            <div className="lot-left">
+              {lot.sold}/{lot.quantity} vendidos {isWaiting ? "· aguardando abertura" : ""}
+            </div>
+            {isActive && (
+              <Link href={`/checkout?lot=${lot.id}`}>
+                <button className="btn btn-primary btn-block">Comprar</button>
+              </Link>
+            )}
+            {isSold && (
+              <button className="btn btn-outline btn-block" disabled>
+                Esgotado
+              </button>
+            )}
+            {isWaiting && (
+              <button className="btn btn-outline btn-block" disabled>
+                Aguardando lote atual esgotar
+              </button>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
