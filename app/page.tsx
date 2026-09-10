@@ -43,7 +43,7 @@ export default async function HomePage() {
       </section>
 
       <div className="info-strip">
-        <div className="wrap info-grid">
+        <div className="wrap info-grid" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
           <div className="info-item">
             <div className="k">📅 DATA</div>
             <div className="v">{EVENT.date}</div>
@@ -55,10 +55,6 @@ export default async function HomePage() {
           <div className="info-item">
             <div className="k">⏰ HORÁRIO</div>
             <div className="v">{EVENT.time}</div>
-          </div>
-          <div className="info-item">
-            <div className="k">🔞 CLASSIFICAÇÃO</div>
-            <div className="v">{EVENT.rating}</div>
           </div>
         </div>
       </div>
@@ -83,3 +79,4 @@ export default async function HomePage() {
     </>
   );
 }
+corrige erro de build
