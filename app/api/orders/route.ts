@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createPixCharge } from "@/lib/pagbank";
+import { SERVICE_FEE_CENTS } from "@/lib/event";
 
 export async function POST(req: NextRequest) {
   try {
@@ -74,7 +75,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const totalCents = lot.price_cents * qty;
+    const totalCents = lot.price_cents * qty + SERVICE_FEE_CENTS;
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedCpf = cpf.replace(/\D/g, "");
 
