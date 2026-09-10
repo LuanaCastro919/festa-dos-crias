@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getOrderStatus } from "@/lib/pagbank";
+import { markOrderPaid } from "@/lib/process-payment";
 
 export async function GET(
   _req: NextRequest,
@@ -7,7 +9,7 @@ export async function GET(
 ) {
   const db = supabaseAdmin();
 
-  const { data: order, error } = await db
+  let { data: order, error } = await db
     .from("orders")
     .select("*, lots(name)")
     .eq("id", params.id)
@@ -15,6 +17,24 @@ export async function GET(
 
   if (error || !order) {
     return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 });
+  }
+
+  // plano B: se o pedido ainda está pendente, confere direto na API do
+  // PagBank (o webhook pode demorar ou falhar em chegar)
+  if (order.status === "pendente" && order.pagbank_order_id) {
+    const remote = await getOrderStatus(order.pagbank_order_id);
+    if (remote?.status === "PAID") {
+      await markOrderPaid(order.id, order.qty, order.lot_id, remote.paidAt);
+      const { data: refreshed } = await db
+        .from("orders")
+        .select("*, lots(name)")
+        .eq("id", params.id)
+        .single();
+      if (refreshed) order = refreshed;
+    } else if (remote?.status === "DECLINED") {
+      await db.from("orders").update({ status: "recusado" }).eq("id", order.id);
+      order.status = "recusado";
+    }
   }
 
   let tickets: any[] = [];
