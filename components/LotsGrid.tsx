@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { fmtBRL } from "@/lib/format";
+import { SERVICE_FEE_CENTS } from "@/lib/event";
 
 type Lot = {
   id: number;
@@ -35,6 +36,9 @@ export default function LotsGrid({ lots }: { lots: Lot[] }) {
             <div className="lot-num">{lot.position}</div>
             <div className="lot-name">{lot.name.toUpperCase()}</div>
             <div className="lot-price">{fmtBRL(lot.price_cents)}</div>
+            <div style={{ fontSize: 12, color: "var(--gray-dim)", marginTop: -4, marginBottom: 4 }}>
+              + {fmtBRL(SERVICE_FEE_CENTS)} (taxa)
+            </div>
             <div className={`lot-status ${lot.status}`} style={{ marginBottom: 22 }}>
               {statusLabel}
             </div>
