@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { getOrderStatus } from "@/lib/pagbank";
+import { getPaymentStatus } from "@/lib/asaas";
 import { markOrderPaid } from "@/lib/process-payment";
 
 export async function GET(
@@ -20,10 +20,11 @@ export async function GET(
   }
 
   // plano B: se o pedido ainda está pendente, confere direto na API do
-  // PagBank (o webhook pode demorar ou falhar em chegar)
-  if (order.status === "pendente" && order.pagbank_order_id) {
-    const remote = await getOrderStatus(order.pagbank_order_id);
-    if (remote?.status === "PAID") {
+  // Asaas (o webhook pode demorar ou falhar em chegar)
+  // pagbank_charge_id guarda o id da cobrança (payment) no Asaas
+  if (order.status === "pendente" && order.pagbank_charge_id) {
+    const remote = await getPaymentStatus(order.pagbank_charge_id);
+    if (remote?.status === "RECEIVED" || remote?.status === "CONFIRMED") {
       await markOrderPaid(order.id, order.qty, order.lot_id, remote.paidAt);
       const { data: refreshed } = await db
         .from("orders")
@@ -31,9 +32,9 @@ export async function GET(
         .eq("id", params.id)
         .single();
       if (refreshed) order = refreshed;
-    } else if (remote?.status === "DECLINED") {
-      await db.from("orders").update({ status: "recusado" }).eq("id", order.id);
-      order.status = "recusado";
+    } else if (remote?.status === "OVERDUE") {
+      await db.from("orders").update({ status: "expirado" }).eq("id", order.id);
+      order.status = "expirado";
     }
   }
 
