@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { verifyPagbankSignature } from "@/lib/pagbank";
-import { generateTicketCode } from "@/lib/tickets";
+import { markOrderPaid } from "@/lib/process-payment";
 
 export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   const signature = req.headers.get("x-authenticity-token");
 
- const isProduction = process.env.PAGBANK_ENV === "production";
+  // No ambiente sandbox o PagBank não envia o header de assinatura (bug
+  // conhecido da própria plataforma), então só exigimos a verificação em
+  // produção, onde o header realmente é enviado.
+  const isProduction = process.env.PAGBANK_ENV === "production";
   if (isProduction && !verifyPagbankSignature(rawBody, signature)) {
-    
+    // não é uma notificação legítima do PagBank — descarta
     return NextResponse.json({ error: "Assinatura inválida." }, { status: 401 });
   }
-  
+
   let payload: any;
   try {
     payload = JSON.parse(rawBody);
@@ -59,62 +62,7 @@ export async function POST(req: NextRequest) {
   }
 
   if (status === "PAID") {
-    const { data: lot } = await db.from("lots").select("*").eq("id", order.lot_id).single();
-    if (!lot) {
-      return NextResponse.json({ received: true });
-    }
-
-    // gera os N ingressos deste pedido, com código único cada um
-    const ticketRows = [];
-    for (let i = 0; i < order.qty; i++) {
-      let code = generateTicketCode();
-      // garante unicidade (extremamente raro colidir, mas confere mesmo assim)
-      // eslint-disable-next-line no-await-in-loop
-      let { data: exists } = await db
-        .from("tickets")
-        .select("id")
-        .eq("ticket_code", code)
-        .maybeSingle();
-      while (exists) {
-        code = generateTicketCode();
-        // eslint-disable-next-line no-await-in-loop
-        const retry = await db
-          .from("tickets")
-          .select("id")
-          .eq("ticket_code", code)
-          .maybeSingle();
-        exists = retry.data;
-      }
-
-      ticketRows.push({
-        order_id: order.id,
-        ticket_code: code,
-        lot_id: order.lot_id,
-        lot_name: lot.name,
-        buyer_name: order.buyer_name,
-        cpf: order.cpf,
-        email: order.email,
-        whatsapp: order.whatsapp,
-        price_paid_cents: lot.price_cents,
-        payment_method: order.payment_method,
-      });
-    }
-
-    await db.from("tickets").insert(ticketRows);
-
-    await db
-      .from("orders")
-      .update({ status: "pago", paid_at: charge.paid_at ?? new Date().toISOString() })
-      .eq("id", order.id);
-
-    const newSold = lot.sold + order.qty;
-    await db
-      .from("lots")
-      .update({
-        sold: newSold,
-        status: newSold >= lot.quantity ? "esgotado" : lot.status,
-      })
-      .eq("id", lot.id);
+    await markOrderPaid(order.id, order.qty, order.lot_id, charge.paid_at);
   } else if (status === "DECLINED") {
     await db.from("orders").update({ status: "recusado" }).eq("id", order.id);
   }
