@@ -7,11 +7,12 @@ export async function POST(req: NextRequest) {
   const rawBody = await req.text();
   const signature = req.headers.get("x-authenticity-token");
 
-  if (!verifyPagbankSignature(rawBody, signature)) {
-    // não é uma notificação legítima do PagBank — descarta
+ const isProduction = process.env.PAGBANK_ENV === "production";
+  if (isProduction && !verifyPagbankSignature(rawBody, signature)) {
+    
     return NextResponse.json({ error: "Assinatura inválida." }, { status: 401 });
   }
-
+  
   let payload: any;
   try {
     payload = JSON.parse(rawBody);
