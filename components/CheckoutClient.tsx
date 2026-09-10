@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { fmtBRL } from "@/lib/format";
+import { SERVICE_FEE_CENTS } from "@/lib/event";
 
 type Lot = {
   id: number;
@@ -25,7 +26,8 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
 
   const available = Math.max(lot.quantity - lot.sold, 0);
   const maxQty = Math.max(1, Math.min(8, available));
-  const total = lot.price_cents * qty;
+  const subtotal = lot.price_cents * qty;
+  const total = subtotal + SERVICE_FEE_CENTS;
 
   async function submit() {
     if (!name.trim() || !cpf.trim() || !email.trim() || !whatsapp.trim()) {
@@ -87,6 +89,14 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
           <div className="summary-row">
             <span>Preço atual</span>
             <b>{fmtBRL(lot.price_cents)}</b>
+          </div>
+          <div className="summary-row">
+            <span>Subtotal</span>
+            <b>{fmtBRL(subtotal)}</b>
+          </div>
+          <div className="summary-row">
+            <span>Taxa de serviço</span>
+            <b>{fmtBRL(SERVICE_FEE_CENTS)}</b>
           </div>
           <div className="summary-total">
             <span>Total</span>
@@ -169,6 +179,14 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
           <div className="summary-row">
             <span>Valor unitário</span>
             <b>{fmtBRL(lot.price_cents)}</b>
+          </div>
+          <div className="summary-row">
+            <span>Subtotal</span>
+            <b>{fmtBRL(subtotal)}</b>
+          </div>
+          <div className="summary-row">
+            <span>Taxa de serviço</span>
+            <b>{fmtBRL(SERVICE_FEE_CENTS)}</b>
           </div>
           <div className="summary-total">
             <span>Total</span>
