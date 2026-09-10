@@ -79,4 +79,3 @@ export default async function HomePage() {
     </>
   );
 }
-corrige erro de build
