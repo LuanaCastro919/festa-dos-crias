@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
-import { createPixCharge } from "@/lib/pagbank";
+import { createPixCharge } from "@/lib/asaas";
 import { SERVICE_FEE_CENTS } from "@/lib/event";
 
 export async function POST(req: NextRequest) {
@@ -102,11 +102,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // separa DDD e número do whatsapp pro formato exigido pelo PagBank
-    const digits = whatsapp.replace(/\D/g, "");
-    const ddd = digits.slice(0, 2) || "11";
-    const phoneNumber = digits.slice(2) || "999999999";
-
     try {
       const pix = await createPixCharge({
         referenceId: order.id,
@@ -115,15 +110,15 @@ export async function POST(req: NextRequest) {
         buyerName: name,
         buyerEmail: email,
         buyerCpf: cpf,
-        buyerPhoneDDD: ddd,
-        buyerPhoneNumber: phoneNumber,
+        buyerPhone: whatsapp,
       });
 
       await db
         .from("orders")
         .update({
-          pagbank_order_id: pix.pagbankOrderId,
-          pagbank_charge_id: pix.chargeId,
+          // reaproveitamos estas duas colunas do banco para guardar os IDs do Asaas
+          pagbank_order_id: pix.asaasCustomerId,
+          pagbank_charge_id: pix.asaasPaymentId,
           pix_qr_text: pix.qrText,
           pix_qr_image_url: pix.qrImageUrl,
           pix_expiration: pix.expiration,
@@ -138,7 +133,7 @@ export async function POST(req: NextRequest) {
         totalCents,
       });
     } catch (pixError: any) {
-      // se o PagBank falhar, não deixa o pedido travado como pendente pra sempre
+      // se o Asaas falhar, não deixa o pedido travado como pendente pra sempre
       await db
         .from("orders")
         .update({ status: "recusado" })
