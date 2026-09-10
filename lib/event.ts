@@ -8,3 +8,7 @@ export const EVENT = {
   local: "Galpão Fantasma — Recife, PE",
   rating: "18 anos",
 };
+
+// Taxa de serviço fixa cobrada por pedido (não multiplica pela quantidade
+// de ingressos). Em centavos — 200 = R$ 2,00.
+export const SERVICE_FEE_CENTS = 200;
