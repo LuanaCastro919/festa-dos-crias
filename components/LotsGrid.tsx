@@ -15,7 +15,6 @@ export default function LotsGrid({ lots }: { lots: Lot[] }) {
   return (
     <div className="lots-grid">
       {lots.map((lot) => {
-        const pct = Math.min(100, Math.round((lot.sold / lot.quantity) * 100));
         const available = Math.max(lot.quantity - lot.sold, 0);
         const isActive = lot.status === "ativo";
         const isSold = lot.status === "esgotado";
@@ -36,12 +35,8 @@ export default function LotsGrid({ lots }: { lots: Lot[] }) {
             <div className="lot-num">{lot.position}</div>
             <div className="lot-name">{lot.name.toUpperCase()}</div>
             <div className="lot-price">{fmtBRL(lot.price_cents)}</div>
-            <div className={`lot-status ${lot.status}`}>{statusLabel}</div>
-            <div className="lot-progress">
-              <i style={{ width: `${pct}%` }} />
-            </div>
-            <div className="lot-left">
-              {lot.sold}/{lot.quantity} vendidos {isWaiting ? "· aguardando abertura" : ""}
+            <div className={`lot-status ${lot.status}`} style={{ marginBottom: 22 }}>
+              {statusLabel}
             </div>
             {isActive && (
               <Link href={`/checkout?lot=${lot.id}`}>
