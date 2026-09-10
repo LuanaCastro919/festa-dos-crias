@@ -118,6 +118,33 @@ export async function createPixCharge(
 }
 
 /**
+ * Consulta diretamente na API do PagBank o status atual de um pedido.
+ * Serve como plano B para quando o webhook demora ou falha em chegar —
+ * a página de pagamento chama isso enquanto aguarda a confirmação.
+ */
+export async function getOrderStatus(
+  pagbankOrderId: string
+): Promise<{ status: string; paidAt?: string } | null> {
+  const token = process.env.PAGBANK_TOKEN;
+  if (!token) return null;
+
+  const res = await fetch(`${BASE_URL}/orders/${pagbankOrderId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      Accept: "application/json",
+    },
+    cache: "no-store",
+  });
+
+  if (!res.ok) return null;
+  const data = await res.json();
+  const charge = data.charges?.[0];
+  if (!charge) return null;
+
+  return { status: charge.status, paidAt: charge.paid_at };
+}
+
+/**
  * Confere se uma notificação recebida no webhook realmente veio do PagBank.
  * Documentação: https://developer.pagbank.com.br/reference/confirmar-autenticidade-da-notificacao
  * Assinatura = SHA256("{token}-{payload_bruto_sem_formatacao}")
