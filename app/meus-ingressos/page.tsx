@@ -13,6 +13,7 @@ type TicketRow = {
   price_paid_cents: number;
   checkin_status: "pendente" | "realizado";
   created_at: string;
+  qrDataUrl: string;
 };
 
 export default function MeusIngressosPage() {
@@ -84,6 +85,12 @@ export default function MeusIngressosPage() {
                   <div>
                     <div className="tf">COMPRA</div>
                     <div className="tv">{fmtDate(t.created_at)}</div>
+                  </div>
+                </div>
+                <div className="ticket-qr">
+                  <div className="qrbox">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={t.qrDataUrl} alt={`QR do ingresso ${t.ticket_code}`} />
                   </div>
                 </div>
                 <div className="ticket-code">{t.ticket_code}</div>
