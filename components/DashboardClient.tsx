@@ -21,14 +21,40 @@ type DashboardData = {
   totalCheckins: number;
 };
 
+type ReconcileResult = {
+  checked: number;
+  confirmed: number;
+  results: { buyerName: string; totalCents: number; result: string }[];
+};
+
 export default function DashboardClient() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [reconciling, setReconciling] = useState(false);
+  const [reconcileResult, setReconcileResult] = useState<ReconcileResult | null>(null);
 
-  useEffect(() => {
+  function load() {
     fetch("/api/admin/dashboard")
       .then((r) => r.json())
       .then(setData);
+  }
+
+  useEffect(() => {
+    load();
   }, []);
+
+  async function reconcile() {
+    setReconciling(true);
+    setReconcileResult(null);
+    try {
+      const res = await fetch("/api/admin/reconcile-orders", { method: "POST" });
+      const result = await res.json();
+      setReconcileResult(result);
+      load(); // atualiza os números depois de confirmar pedidos
+    } catch {
+      setReconcileResult({ checked: 0, confirmed: 0, results: [] });
+    }
+    setReconciling(false);
+  }
 
   if (!data) {
     return (
@@ -47,7 +73,44 @@ export default function DashboardClient() {
     <>
       <div className="admin-topbar">
         <div className="admin-title">Dashboard</div>
+        <button className="btn btn-outline btn-sm" onClick={reconcile} disabled={reconciling}>
+          {reconciling ? "Verificando..." : "Verificar pedidos pendentes"}
+        </button>
       </div>
+
+      {reconcileResult && (
+        <div className="panel" style={{ fontSize: 13 }}>
+          <div className="panel-title">
+            Resultado da verificação — {reconcileResult.checked} pedido(s) conferido(s),{" "}
+            {reconcileResult.confirmed} confirmado(s) agora
+          </div>
+          {reconcileResult.results.length === 0 ? (
+            <p style={{ color: "var(--gray)" }}>Nenhum pedido pendente encontrado.</p>
+          ) : (
+            <div className="table-scroll">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Comprador</th>
+                    <th>Valor</th>
+                    <th>Resultado</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reconcileResult.results.map((r, i) => (
+                    <tr key={i}>
+                      <td>{r.buyerName}</td>
+                      <td>{fmtBRL(r.totalCents)}</td>
+                      <td>{r.result}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="stat-grid">
         <div className="stat-card">
           <div className="l">TOTAL DE INGRESSOS VENDIDOS</div>
