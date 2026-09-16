@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
+import { generateTicketQrDataUrl } from "@/lib/tickets";
 
 export async function GET(req: NextRequest) {
   const query = req.nextUrl.searchParams.get("q")?.trim();
@@ -18,5 +19,12 @@ export async function GET(req: NextRequest) {
     .eq(column, value)
     .order("created_at", { ascending: false });
 
-  return NextResponse.json({ tickets: tickets ?? [] });
+  const ticketsWithQr = await Promise.all(
+    (tickets ?? []).map(async (t) => ({
+      ...t,
+      qrDataUrl: await generateTicketQrDataUrl(t.ticket_code),
+    }))
+  );
+
+  return NextResponse.json({ tickets: ticketsWithQr });
 }
