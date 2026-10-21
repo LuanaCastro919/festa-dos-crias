@@ -9,6 +9,7 @@ type Lot = {
   price_cents: number;
   quantity: number;
   sold: number;
+  revenue_cents?: number;
   status: string;
 };
 
@@ -143,7 +144,7 @@ export default function DashboardClient() {
                 />
               </div>
               <div style={{ textAlign: "right", color: "var(--gray)" }}>
-                {l.sold} · {fmtBRL(l.sold * l.price_cents)}
+                {l.sold} · {fmtBRL(l.revenue_cents ?? l.sold * l.price_cents)}
               </div>
             </div>
           ))}
