@@ -9,3 +9,6 @@ export const EVENT = {
 
 };
 export const SERVICE_FEE_CENTS = 200;
+
+// Máximo de ingressos (não de combos) por pedido
+export const MAX_TICKETS_PER_ORDER = 8;
