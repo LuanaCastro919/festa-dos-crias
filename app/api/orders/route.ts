@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase-admin";
 import { createPixCharge } from "@/lib/asaas";
-import { SERVICE_FEE_CENTS } from "@/lib/event";
+import { SERVICE_FEE_CENTS, MAX_TICKETS_PER_ORDER } from "@/lib/event";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, cpf, email, whatsapp, lotId, qty } = body as {
+    const { name, cpf, email, whatsapp, lotId, qty: packs } = body as {
       name: string;
       cpf: string;
       email: string;
@@ -15,17 +15,14 @@ export async function POST(req: NextRequest) {
       qty: number;
     };
 
-    if (!name || !cpf || !email || !whatsapp || !lotId || !qty) {
+    if (!name || !cpf || !email || !whatsapp || !lotId || !packs) {
       return NextResponse.json(
         { error: "Preencha todos os campos." },
         { status: 400 }
       );
     }
-    if (qty < 1 || qty > 8) {
-      return NextResponse.json(
-        { error: "Quantidade inválida (máximo 8 por compra)." },
-        { status: 400 }
-      );
+    if (!Number.isInteger(packs) || packs < 1) {
+      return NextResponse.json({ error: "Quantidade inválida." }, { status: 400 });
     }
 
     const db = supabaseAdmin();
@@ -51,6 +48,16 @@ export async function POST(req: NextRequest) {
 
     // soma quantos ingressos já estão reservados por pedidos pendentes
     // (aguardando pagamento e ainda dentro da validade do QR) para não vender além do estoque
+    // "packs" = quantidade de combos escolhidos; "qty" = total de ingressos
+    const bundleSize = Math.max(lot.bundle_size ?? 1, 1);
+    const qty = packs * bundleSize;
+    if (qty > MAX_TICKETS_PER_ORDER) {
+      return NextResponse.json(
+        { error: `Máximo de ${MAX_TICKETS_PER_ORDER} ingressos por compra.` },
+        { status: 400 }
+      );
+    }
+
     const { data: pendingOrders } = await db
       .from("orders")
       .select("qty, pix_expiration")
@@ -75,7 +82,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const totalCents = lot.price_cents * qty + SERVICE_FEE_CENTS;
+    const totalCents = lot.price_cents * packs + SERVICE_FEE_CENTS;
     const normalizedEmail = email.trim().toLowerCase();
     const normalizedCpf = cpf.replace(/\D/g, "");
 
@@ -105,7 +112,7 @@ export async function POST(req: NextRequest) {
     try {
       const pix = await createPixCharge({
         referenceId: order.id,
-        description: `${lot.name} — Baile dos Crias (${qty}x)`,
+        description: `${lot.name} — Baile dos Crias (${qty} ingresso${qty > 1 ? "s" : ""})`,
         amountCents: totalCents,
         buyerName: name,
         buyerEmail: email,
