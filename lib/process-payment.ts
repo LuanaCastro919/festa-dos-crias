@@ -27,6 +27,12 @@ export async function markOrderPaid(orderId: string, qty: number, lotId: number,
   const { data: lot } = await db.from("lots").select("*").eq("id", lotId).single();
   if (!lot) return;
 
+  // Lote combo (ex.: 2 por R$ X): price_cents é o preço do combo inteiro.
+  // Dividimos entre os ingressos para a soma bater com o que foi pago.
+  const bundleSize = Math.max(lot.bundle_size ?? 1, 1);
+  const baseCents = Math.floor(lot.price_cents / bundleSize);
+  const remainder = lot.price_cents - baseCents * bundleSize;
+
   const ticketRows = [];
   for (let i = 0; i < qty; i++) {
     let code = generateTicketCode();
@@ -52,7 +58,8 @@ export async function markOrderPaid(orderId: string, qty: number, lotId: number,
       cpf: order.cpf,
       email: order.email,
       whatsapp: order.whatsapp,
-      price_paid_cents: lot.price_cents,
+      // o primeiro ingresso de cada combo leva a sobra dos centavos
+      price_paid_cents: baseCents + (i % bundleSize === 0 ? remainder : 0),
       payment_method: order.payment_method,
     });
   }
