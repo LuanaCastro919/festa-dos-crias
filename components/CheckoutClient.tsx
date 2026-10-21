@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { fmtBRL } from "@/lib/format";
-import { SERVICE_FEE_CENTS } from "@/lib/event";
+import { SERVICE_FEE_CENTS, MAX_TICKETS_PER_ORDER } from "@/lib/event";
 
 type Lot = {
   id: number;
@@ -11,6 +11,7 @@ type Lot = {
   price_cents: number;
   quantity: number;
   sold: number;
+  bundle_size?: number;
 };
 
 export default function CheckoutClient({ lot }: { lot: Lot }) {
@@ -25,7 +26,17 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
   const [error, setError] = useState<string | null>(null);
 
   const available = Math.max(lot.quantity - lot.sold, 0);
-  const maxQty = Math.max(1, Math.min(8, available));
+  const bundleSize = Math.max(lot.bundle_size ?? 1, 1);
+  const isBundle = bundleSize > 1;
+  // qty = quantidade de combos (ou de ingressos, se o lote não for combo)
+  const maxQty = Math.max(
+    1,
+    Math.min(
+      Math.floor(MAX_TICKETS_PER_ORDER / bundleSize),
+      Math.floor(available / bundleSize)
+    )
+  );
+  const totalTickets = qty * bundleSize;
   const subtotal = lot.price_cents * qty;
   const total = subtotal + SERVICE_FEE_CENTS;
 
@@ -83,11 +94,13 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
               +
             </button>
             <span style={{ color: "var(--gray)", fontSize: 13, marginLeft: 8 }}>
-              ingresso{qty > 1 ? "s" : ""}
+              {isBundle
+                ? `combo${qty > 1 ? "s" : ""} de ${bundleSize} = ${totalTickets} ingressos`
+                : `ingresso${qty > 1 ? "s" : ""}`}
             </span>
           </div>
           <div className="summary-row">
-            <span>Preço atual</span>
+            <span>{isBundle ? `Combo (${bundleSize} ingressos)` : "Preço atual"}</span>
             <b>{fmtBRL(lot.price_cents)}</b>
           </div>
           <div className="summary-row">
@@ -106,9 +119,9 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
             className="btn btn-primary btn-block"
             style={{ marginTop: 24 }}
             onClick={() => setStep("form")}
-            disabled={available <= 0}
+            disabled={available < bundleSize}
           >
-            {available <= 0 ? "Lote esgotado" : "Continuar"}
+            {available < bundleSize ? "Lote esgotado" : "Continuar"}
           </button>
         </div>
       </>
@@ -160,7 +173,7 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
           </div>
           <p style={{ fontSize: 12, color: "var(--gray-dim)", marginTop: 10 }}>
             O pagamento é via PIX. Você vai receber um QR Code real — assim que o
-            PagBank confirmar o pagamento, seus ingressos são liberados automaticamente.
+            pagamento for confirmado o pagamento, seus ingressos são liberados automaticamente.
           </p>
         </div>
 
@@ -173,11 +186,11 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
             <b>{lot.name}</b>
           </div>
           <div className="summary-row">
-            <span>Quantidade</span>
-            <b>{qty}</b>
+            <span>Ingressos</span>
+            <b>{totalTickets}</b>
           </div>
           <div className="summary-row">
-            <span>Valor unitário</span>
+            <span>{isBundle ? "Valor do combo" : "Valor unitário"}</span>
             <b>{fmtBRL(lot.price_cents)}</b>
           </div>
           <div className="summary-row">
