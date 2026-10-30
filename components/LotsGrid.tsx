@@ -9,6 +9,7 @@ type Lot = {
   quantity: number;
   sold: number;
   bundle_size?: number;
+  min_qty?: number;
   position: number;
   status: "ativo" | "esgotado" | "aguardando" | "encerrado";
 };
@@ -43,6 +44,11 @@ export default function LotsGrid({ lots }: { lots: Lot[] }) {
               </div>
             )}
             <div className="lot-price">{fmtBRL(lot.price_cents)}</div>
+            {(lot.min_qty ?? 1) > 1 && (
+              <div style={{ fontSize: 13, color: "var(--gray)", fontWeight: 700 }}>
+                POR INGRESSO · A PARTIR DE {lot.min_qty} NA COMPRA
+              </div>
+            )}
             <div style={{ fontSize: 12, color: "var(--gray-dim)", marginTop: -4, marginBottom: 4 }}>
               + {fmtBRL(SERVICE_FEE_CENTS)} (taxa)
             </div>
