@@ -51,6 +51,13 @@ export async function POST(req: NextRequest) {
     // "packs" = quantidade de combos escolhidos; "qty" = total de ingressos
     const bundleSize = Math.max(lot.bundle_size ?? 1, 1);
     const qty = packs * bundleSize;
+    const minQty = Math.max(lot.min_qty ?? 1, 1);
+    if (qty < minQty) {
+      return NextResponse.json(
+        { error: `Este lote exige no mínimo ${minQty} ingressos por compra.` },
+        { status: 400 }
+      );
+    }
     if (qty > MAX_TICKETS_PER_ORDER) {
       return NextResponse.json(
         { error: `Máximo de ${MAX_TICKETS_PER_ORDER} ingressos por compra.` },
