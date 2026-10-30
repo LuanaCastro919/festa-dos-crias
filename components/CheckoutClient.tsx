@@ -12,12 +12,13 @@ type Lot = {
   quantity: number;
   sold: number;
   bundle_size?: number;
+  min_qty?: number;
 };
 
 export default function CheckoutClient({ lot }: { lot: Lot }) {
   const router = useRouter();
   const [step, setStep] = useState<"qty" | "form">("qty");
-  const [qty, setQty] = useState(1);
+  const [qty, setQty] = useState(Math.max(lot.min_qty ?? 1, 1));
   const [name, setName] = useState("");
   const [cpf, setCpf] = useState("");
   const [email, setEmail] = useState("");
@@ -36,6 +37,7 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
       Math.floor(available / bundleSize)
     )
   );
+  const minQty = Math.max(lot.min_qty ?? 1, 1);
   const totalTickets = qty * bundleSize;
   const subtotal = lot.price_cents * qty;
   const total = subtotal + SERVICE_FEE_CENTS;
@@ -82,7 +84,7 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
           <div className="qty-row" style={{ marginBottom: 26 }}>
             <button
               className="qty-btn"
-              onClick={() => setQty((q) => Math.max(1, q - 1))}
+              onClick={() => setQty((q) => Math.max(minQty, q - 1))}
             >
               −
             </button>
@@ -99,6 +101,11 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
                 : `ingresso${qty > 1 ? "s" : ""}`}
             </span>
           </div>
+          {minQty > 1 && (
+            <p style={{ fontSize: 13, color: "var(--gray)", margin: "0 0 14px" }}>
+              Este lote vale a partir de {minQty} ingressos por compra (máximo {maxQty}).
+            </p>
+          )}
           <div className="summary-row">
             <span>{isBundle ? `Combo (${bundleSize} ingressos)` : "Preço atual"}</span>
             <b>{fmtBRL(lot.price_cents)}</b>
@@ -119,9 +126,9 @@ export default function CheckoutClient({ lot }: { lot: Lot }) {
             className="btn btn-primary btn-block"
             style={{ marginTop: 24 }}
             onClick={() => setStep("form")}
-            disabled={available < bundleSize}
+            disabled={available < Math.max(bundleSize, minQty)}
           >
-            {available < bundleSize ? "Lote esgotado" : "Continuar"}
+            {available < Math.max(bundleSize, minQty) ? "Lote esgotado" : "Continuar"}
           </button>
         </div>
       </>
