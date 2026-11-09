@@ -5,7 +5,7 @@ export const EVENT = {
   date: "21 de Novembro de 2026",
   dateShort: "21/11/2026",
   time: "21:30h às 05h",
-  local: "Em breve... — Recife, PE",
+  local: "Avenida Nossa Senhora da Piedade 1294 — Cajueiro Seco",
 
 };
 export const SERVICE_FEE_CENTS = 200;
