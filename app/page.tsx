@@ -8,7 +8,7 @@ export const revalidate = 0;
 
 export default async function HomePage() {
   const db = supabasePublic();
-  const { data: lots } = await db.from("lots").select("*").order("position");
+  const { data: lots } = await db.from("lots").select("*").eq("hidden", false).order("position");
 
   return (
     <>
