@@ -8,7 +8,6 @@ export const revalidate = 0;
 export default async function IngressosPage() {
   const db = supabasePublic();
   const { data: lots } = await db.from("lots").select("*").order("position");
-  const current = (lots ?? []).find((l) => l.status === "ativo");
 
   return (
     <>
@@ -17,13 +16,14 @@ export default async function IngressosPage() {
         <div className="section-head">
           <div className="section-kicker">INGRESSOS</div>
           <h2 className="section-title">
-            Escolha a quantidade.
-            <br />O lote já está definido.
+            Escolha como você vai.
+            <br />Sozinho, em dupla ou em grupo.
           </h2>
           <p className="section-desc">
-            {current
-              ? `O lote vigente agora é o ${current.name}. Assim que ele esgotar, o próximo lote abre automaticamente com um novo preço.`
-              : "Todos os lotes estão esgotados no momento."}
+            O Lote Único vale para todo mundo. Para vir acompanhado, aproveite a
+            Promoção Casadinha (2 ingressos juntos) ou a Promoção em Grupo (a partir de
+            3 pessoas, com preço menor por ingresso). São no máximo 8 ingressos por
+            compra, e cada um tem o seu QR Code.
           </p>
         </div>
         <LotsGrid lots={lots ?? []} />
