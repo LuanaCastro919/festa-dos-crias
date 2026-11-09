@@ -61,16 +61,17 @@ export default async function HomePage() {
 
       <section className="section wrap">
         <div className="section-head">
-          <div className="section-kicker">INGRESSO ÚNICO, POR LOTES</div>
+          <div className="section-kicker">LOTE ÚNICO + PROMOÇÕES</div>
           <h2 className="section-title">
-            Um ingresso.
-            <br />O preço sobe a cada lote.
+            Um lote único.
+            <br />E promoções pra vir acompanhado.
           </h2>
           <p className="section-desc">
             Não existem categorias como pista, VIP ou camarote — todo mundo entra da
-            mesma forma. O que muda é o momento em que você compra: cada lote tem uma
-            quantidade limitada e, quando esgota, o próximo entra automaticamente em
-            vigor, com o preço seguinte.
+            mesma forma, pelo Lote Único. Vai com mais gente? Na Promoção Casadinha você
+            leva 2 ingressos juntos por um preço especial, e na Promoção em Grupo, a
+            partir de 3 pessoas, cada ingresso sai mais barato. Cada ingresso tem o seu
+            próprio QR Code.
           </p>
         </div>
         <LotsGrid lots={lots ?? []} />
