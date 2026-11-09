@@ -63,7 +63,7 @@ export default async function HomePage() {
         <div className="section-head">
           <div className="section-kicker">LOTE ÚNICO + PROMOÇÕES</div>
           <h2 className="section-title">
-            Um lote único.
+            Um lote único
             <br />E promoções pra vir acompanhado.
           </h2>
           <p className="section-desc">
